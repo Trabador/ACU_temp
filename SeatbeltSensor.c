@@ -161,12 +161,12 @@ void STS_StateMachinePass(void)
 	{
 		
 		case UNBUCKLED:
-			if(rub_BuckledPass == VALID_BUCKLED)
+			if(rub_BuckledPass >= VALID_BUCKLED)
 			{
 				SBS_ResetCounterPass();
 				re_SeatbeltStatusPass = BUCKLED;
 			}
-			else if(rub_UndeterminedPass == VALID_UNDETERMINED)
+			else if(rub_UndeterminedPass >= VALID_UNDETERMINED)
 			{
 				SBS_ResetCounterPass();
 				re_SeatbeltStatusPass = UNDERTERMINED;
@@ -175,12 +175,12 @@ void STS_StateMachinePass(void)
 		break;
 		
 		case BUCKLED:
-			if(rub_UnbuckledPass == VALID_UNBUCKLED)
+			if(rub_UnbuckledPass >= VALID_UNBUCKLED)
 			{
 				SBS_ResetCounterPass();
 				re_SeatbeltStatusPass = UNBUCKLED;
 			}
-			else if(rub_UndeterminedPass == VALID_UNDETERMINED)
+			else if(rub_UndeterminedPass >= VALID_UNDETERMINED)
 			{
 				SBS_ResetCounterPass();
 				re_SeatbeltStatusPass = UNDERTERMINED;
@@ -189,12 +189,12 @@ void STS_StateMachinePass(void)
 		break;
 		
 		case UNDETERMINED:
-			if(rub_BuckledPass == VALID_BUCKLED)
+			if(rub_BuckledPass >= VALID_BUCKLED)
 			{
 				SBS_ResetCounterPass();
 				re_SeatbeltStatusPass = BUCKLED;
 			}
-			else if(rub_UnbuckledPass == VALID_UNBUCKLED)
+			else if(rub_UnbuckledPass >= VALID_UNBUCKLED)
 			{
 				SBS_ResetCounterPass();
 				re_SeatbeltStatusPass = UNBUCKLED;

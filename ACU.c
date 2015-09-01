@@ -3,29 +3,29 @@
 /*============================================================================*/
 /*                        OBJECT SPECIFICATION                                */
 /*============================================================================*
-* C Source:         %SeatSensor.c%
+* C Source:         %Alexis Garcia.c%
 * Instance:         1
 * %version:         1 %
 * %created_by:      Alexis Garcia %
-* %date_created:    29 de agosto de 2015 %
+* %date_created:    31/08/15 %
 *=============================================================================*/
-/* DESCRIPTION :                                     */
+/* DESCRIPTION : C source for the ACU unit                                    */
 /*============================================================================*/
-/* FUNCTION COMMENT :  */
-/* */
+/* FUNCTION COMMENT : This file describes the main functionality of the ACU module*/
+/* checks for seatbelts and occupancy and calls the reminders                 */
 /*                                                                            */
 /*============================================================================*/
 /*                               OBJECT HISTORY                               */
 /*============================================================================*/
 /*  REVISION |   DATE      |                               |      AUTHOR      */
 /*----------------------------------------------------------------------------*/
-/*  1.0      | 29/08/2015  |                               | Alexis Garcia    */
-/* Creation of the module                                             		  */
+/*  1.0      | 31/08/15    |                               | Alexis Garcia    */
+/* Creation of the module file, first version                                 */
 /*============================================================================*/
 
 /* Includes */
 /* -------- */
-#include "SeatSensor.h"
+#include "ACU.h"
 
 /* Functions macros, constants, types and datas         */
 /* ---------------------------------------------------- */
@@ -48,16 +48,14 @@
 /* Definition of RAM variables                          */
 /*======================================================*/ 
 /* BYTE RAM variables */
-static T_UBYTE rub_Occupied = 0;
-static T_UBYTE rub_Unoccupied = 0;
-static T_UBYTE rub_Undetermined = 0;
-
+static T_UBYTE rub_PassState;
+static T_UBYTE rub_DriverState;
 
 /* WORD RAM variables */
 
 
 /* LONG and STRUCTURE RAM variables */
-static E_SeatStatusType re_SeatStatus = UNOCCUPIED;
+
 
 /*======================================================*/ 
 /* close variable declaration sections                  */
@@ -74,6 +72,15 @@ static E_SeatStatusType re_SeatStatus = UNOCCUPIED;
 /* Exported functions prototypes */
 /* ----------------------------- */
 
+/* Inline functions */
+/* ---------------- */
+/**************************************************************
+ *  Name                 : inline_func	2
+ *  Description          :
+ *  Parameters           :  [Input, Output, Input / output]
+ *  Return               :
+ *  Critical/explanation :    [yes / No]
+ **************************************************************/
 
 
 /* Private functions */
@@ -86,80 +93,40 @@ static E_SeatStatusType re_SeatStatus = UNOCCUPIED;
  *  Critical/explanation :    [yes / No]
  **************************************************************/
 
-void STS_StateMachine(void)
+
+/* Exported functions */
+/* ------------------ */
+/**************************************************************
+ *  Name                 :	export_func
+ *  Description          :
+ *  Parameters           :  [Input, Output, Input / output]
+ *  Return               :
+ *  Critical/explanation :    [yes / No]
+ **************************************************************/
+void ACU_StateMachineDriver(void)
 {
-	
-	switch(re_SeatStatus)
+	T_UBYTE lub_ReadStatusDriver;
+	lub_ReadStatusDriver = STS_GetSeatbeltStatusDriver();
+	switch(rub_DriverState)
 	{
-		
-		case UNOCCUPIED:
-			if(rub_Occupied >= VALID_OCCUPIED)
+		case FASTENED:
+			
+			if(lub_ReadStatusDriver == UNBUCKLED || lub_ReadStatusDriver == UNDETERMINED)
 			{
-				SBS_ResetCounters();
-				re_SeatStatus = OCCUPIED;
+				rub_DriverState = UNFASTENED;
 			}
-			else if(rub_Undetermined >= VALID_UNDETERMINED)
-			{
-				SBS_ResetCounters();
-				re_SeatStatus = UNDERTERMINED;
-			}
-			else{ /*do nothing*/ }
 		break;
 		
-		case OCCUPIED:
-			if(rub_Unoccupied >= VALID_UNOCCUPIED)
-			{
-				SBS_ResetCounters();
-				re_SeatStatus = UNOCUPPIED;
-			}
-			else if(rub_Undetermined >= VALID_UNDETERMINED)
-			{
-				SBS_ResetCounters();
-				re_SeatStatus = UNDERTERMINED;
-			}
-			else{ /*do nothing*/ }
-		break;
-		
-		case UNDETERMINED:
-			if(rub_Occupied >= VALID_OCCUPIED)
-			{
-				SBS_ResetCounters();
-				re_SeatStatus = OCCUPIED;
-			}
-			else if(rub_Unoccupied >= VALID_UNOCCUPIED)
-			{
-				SBS_ResetCounters();
-				re_SeatStatus = UNOCUPPIED;
-			}
-			else{ /*do nothing*/ }
+		case UNFASTENED:
+			/*call for the driver reminder corresponding*/
 		break;
 		
 		default:
-			/*error message */
+			/*error message*/
 		break;
-	
 	}
 }
 
-/**************************************************************
- *  Name                 : private_func
- *  Description          :
- *  Parameters           :  [Input, Output, Input / output]
- *  Return               :
- *  Critical/explanation :    [yes / No]
- **************************************************************/
- 
- void SBS_ResetCounters(void)
- {
- 	rub_Occupied = 0;
-	rub_Unoccupied = 0;
-	rub_Undetermined = 0;
- }
-
-
-
-/* Exported functions */
-/* ------------------ */
 /**************************************************************
  *  Name                 :	export_func
  *  Description          :
@@ -167,43 +134,35 @@ void STS_StateMachine(void)
  *  Return               :
  *  Critical/explanation :    [yes / No]
  **************************************************************/
-void STS_ReadVoltLevel(void)
+void ACU_StateMachinePass(void)
 {
-	T_UBYTE lub_VoltValue;	
-	
-	/*This is where the function gets voltage from ADC and converts into a integer number*/
-	
-	
-	if((lub_VoltValue >= 12) && (lub_VoltValue <= 20) )
+	T_UBYTE lub_ReadStatusPass, lub_ReadStatusPassOcp;
+	lub_ReadStatusPass = STS_GetSeatbeltStatusPass();
+	lub_ReadStatusOcp =  STS_GetSeatStatus();
+	if(lub_ReadStatusOcp == OCCUPIED)
 	{
-		rub_Unoccupied++;  
-	}
-	else if((lub_VoltValue >= 2) && (lub_VoltValue <= 10) )
-	{
-		rub_Occupied++;
-	}
-	else if((lub_VoltValue > 10) && (lub_VoltValue < 12) )
-	{
-		rub_Undetermined++;
+		switch(rub_PassState)
+		{
+			case FASTENED:
+				if(lub_ReadStatusPass == UNBUCKLED || lub_ReadStatusPass == UNDETERMINED)
+				{
+					rub_DriverState = UNFASTENED;
+				}
+			break;
+			
+			case UNFASTENED:
+				/*call for the driver reminder corresponding*/
+			break;
+			
+			default:
+				/*error message*/
+			break;
+		}		
 	}
 	else
 	{
-		/*do nothing*/	
+		/*do nothing*/
 	}
+	
 }
 
-
-/* Exported functions */
-/* ------------------ */
-/**************************************************************
- *  Name                 :	export_func
- *  Description          :
- *  Parameters           :  [Input, Output, Input / output]
- *  Return               :
- *  Critical/explanation :    [yes / No]
- **************************************************************/
- T_UBYTE STS_GetSeatStatus(void)
- {
- 	return (T_UBYTE) re_SeatStatus;
- }
- 
